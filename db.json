@@ -1,0 +1,31 @@
+{
+  "spendings": [
+    {
+      "id": "2",
+      "title": "Mua sách",
+      "mota": "Sách lập trình",
+      "ngaythu": "2024-07-01",
+      "ngaychi": "2024-07-01",
+      "loaithuchi": true,
+      "sotien": 50000
+    },
+    {
+      "id": "0.6165252712435899",
+      "title": "D",
+      "mota": "B",
+      "ngaythu": "F",
+      "ngaychi": "G",
+      "loaithuchi": false,
+      "sotien": 6896
+    },
+    {
+      "id": "0.019709540145710688",
+      "title": "V",
+      "mota": "V",
+      "ngaythu": "Y",
+      "ngaychi": "H",
+      "loaithuchi": true,
+      "sotien": 5
+    }
+  ]
+}
