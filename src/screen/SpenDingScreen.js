@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
   Modal,
+  StyleSheet,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {
@@ -15,19 +16,22 @@ import {
   updateSpenDing,
   fetchSpendings,
 } from '../redux/reducers/SpenDingReducer';
-
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 const SpenDingScreen = () => {
   const [title, setTitle] = useState('');
   const [mota, setMota] = useState('');
   const [ngaythu, setNgaythu] = useState('');
   const [ngaychi, setNgaychi] = useState('');
+  const [dateText, setDateText] = useState('');
   const [loaithuchi, setLoaithuchi] = useState(true);
   const [sotien, setSotien] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisibleEdit, setModalVisibleEdit] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [idEdit, setIdEdit] = useState(null);
-
+ const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+ const [currentDateType, setCurrentDateType] = useState('');
   const listSpenDing = useSelector(state => state.listSpenDing.listSpenDing);
   const dispatch = useDispatch();
 
@@ -65,7 +69,7 @@ const SpenDingScreen = () => {
     setNgaythu(spending.ngaythu);
     setNgaychi(spending.ngaychi);
     setLoaithuchi(spending.loaithuchi);
-    setSotien(spending.sotien.toString());
+    setSotien(spending.sotien);
     setIdEdit(spending.id);
     setModalVisibleEdit(true);
   };
@@ -85,6 +89,20 @@ const SpenDingScreen = () => {
     setIdEdit(null);
     setModalVisibleEdit(false);
   };
+  const handleDateConfirm = date => {
+    if (date && date instanceof Date) {
+      const formattedDate = date.toLocaleDateString(); // Adjust the format as needed
+      if (currentDateType === 'ngaythu') {
+        setNgaythu(formattedDate);
+      } else if (currentDateType === 'ngaychi') {
+        setNgaychi(formattedDate);
+      }
+      setDateText(formattedDate);
+    } else {
+      console.warn('Invalid date received');
+    }
+    setIsDatePickerVisible(false);
+  };
 
   const totalIncome = listSpenDing.reduce(
     (total, item) => (item.loaithuchi ? total + item.sotien : total),
@@ -99,17 +117,21 @@ const SpenDingScreen = () => {
     item.title.toLowerCase().includes(searchKeyword.toLowerCase()),
   );
   useEffect(() => {
-    console.log('List of spendings:', listSpenDing);
     dispatch(fetchSpendings());
   }, [dispatch]);
   return (
     <View style={{flex: 1, padding: 20}}>
-      <Button title="Thêm" onPress={() => setModalVisible(true)} />
       <TextInput
         placeholder="Tìm kiếm theo tiêu đề"
         value={searchKeyword}
         onChangeText={setSearchKeyword}
-        style={{borderWidth: 1, borderColor: 'black', margin: 10}}
+        style={{
+          borderWidth: 1,
+          borderColor: 'black',
+          margin: 10,
+          borderRadius: 10,
+          padding: 10,
+        }}
       />
 
       <Text style={{margin: 10}}>Tổng số tiền thu: {totalIncome}</Text>
@@ -121,18 +143,21 @@ const SpenDingScreen = () => {
             style={{
               padding: 10,
               margin: 10,
-              backgroundColor: 'cyan',
+              backgroundColor: '#aeaeae',
               borderWidth: 1,
               borderRadius: 10,
+              flexDirection: 'row',
             }}>
-            <Text>Tiêu đề: {spending.title}</Text>
-            <Text>Mô tả: {spending.mota}</Text>
-            <Text>Ngày thu: {spending.ngaythu}</Text>
-            <Text>Ngày chi: {spending.ngaychi}</Text>
-            <Text>Loại: {spending.loaithuchi ? 'Thu' : 'Chi'}</Text>
-            <Text>Số tiền: {spending.sotien}</Text>
+            <View style={{flexDirection: 'column', flex: 1}}>
+              <Text>Tiêu đề: {spending.title}</Text>
+              <Text>Mô tả: {spending.mota}</Text>
+              <Text>Ngày thu: {spending.ngaythu}</Text>
+              <Text>Ngày chi: {spending.ngaychi}</Text>
+              <Text>Loại: {spending.loaithuchi ? 'Thu' : 'Chi'}</Text>
+              <Text>Số tiền: {spending.sotien}</Text>
+            </View>
             <View
-              style={{flexDirection: 'row', justifyContent: 'space-evenly'}}>
+              style={{flexDirection: 'column', justifyContent: 'space-evenly'}}>
               <TouchableOpacity
                 onPress={() => handleEdit(spending)}
                 style={{
@@ -140,10 +165,17 @@ const SpenDingScreen = () => {
                   alignItems: 'center',
                   width: 50,
                   height: 30,
-                  backgroundColor: 'yellow',
+                  backgroundColor: 'blue',
                   borderRadius: 10,
                 }}>
-                <Text style={{textAlign: 'center'}}>Edit</Text>
+                <Text
+                  style={{
+                    textAlign: 'center',
+                    color: '#fff',
+                    fontWeight: 'bold',
+                  }}>
+                  Edit
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => handleDeleteSpenDing(spending.id)}
@@ -155,13 +187,24 @@ const SpenDingScreen = () => {
                   backgroundColor: 'red',
                   borderRadius: 10,
                 }}>
-                <Text style={{textAlign: 'center', color: 'white'}}>Xóa</Text>
+                <Text
+                  style={{
+                    textAlign: 'center',
+                    color: '#fff',
+                    fontWeight: 'bold',
+                  }}>
+                  Xóa
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         ))}
       </ScrollView>
-
+      <TouchableOpacity
+        onPress={() => setModalVisible(true)}
+        style={styles.addButton}>
+        <Icon name="add" size={30} color="#FFf" />
+      </TouchableOpacity>
       {/* Modal add */}
       <Modal
         animationType="slide"
@@ -197,18 +240,40 @@ const SpenDingScreen = () => {
               onChangeText={setTitle}
               style={{borderWidth: 1, borderColor: 'black', margin: 10}}
             />
-            <TextInput
-              placeholder="Nhập ngày thu "
-              value={ngaythu}
-              onChangeText={setNgaythu}
-              style={{borderWidth: 1, borderColor: 'black', margin: 10}}
-            />
-            <TextInput
-              placeholder="Nhập ngày chi"
-              value={ngaychi}
-              onChangeText={setNgaychi}
-              style={{borderWidth: 1, borderColor: 'black', margin: 10}}
-            />
+            <View
+              style={{flexDirection: 'row', alignItems: 'center', margin: 10}}>
+              <TextInput
+                style={{flex: 1, borderWidth: 1, borderColor: 'black'}}
+                placeholder="Ngày thu"
+                value={ngaythu}
+                editable={false}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  setCurrentDateType('ngaythu');
+                  setIsDatePickerVisible(true);
+                }}
+                style={{padding: 10}}>
+                <Icon name="calendar-month" size={25} color="black" />
+              </TouchableOpacity>
+            </View>
+            <View
+              style={{flexDirection: 'row', alignItems: 'center', margin: 10}}>
+              <TextInput
+                style={{flex: 1, borderWidth: 1, borderColor: 'black'}}
+                placeholder="Ngày chi"
+                value={ngaychi}
+                editable={false}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  setCurrentDateType('ngaychi');
+                  setIsDatePickerVisible(true);
+                }}
+                style={{padding: 10}}>
+                <Icon name="calendar-month" size={25} color="black" />
+              </TouchableOpacity>
+            </View>
             <TextInput
               placeholder="Nhập số tiền"
               value={sotien}
@@ -228,7 +293,7 @@ const SpenDingScreen = () => {
                 style={{
                   margin: 10,
                   padding: 10,
-                  backgroundColor: loaithuchi ? 'green' : 'grey',
+                  backgroundColor: loaithuchi ? 'blue' : 'grey',
                   borderRadius: 10,
                 }}>
                 <Text style={{color: 'white'}}>Thu</Text>
@@ -238,7 +303,7 @@ const SpenDingScreen = () => {
                 style={{
                   margin: 10,
                   padding: 10,
-                  backgroundColor: !loaithuchi ? 'red' : 'grey',
+                  backgroundColor: !loaithuchi ? 'blue' : 'grey',
                   borderRadius: 10,
                 }}>
                 <Text style={{color: 'white'}}>Chi</Text>
@@ -254,7 +319,7 @@ const SpenDingScreen = () => {
                   alignItems: 'center',
                   width: 50,
                   height: 30,
-                  backgroundColor: 'red',
+                  backgroundColor: 'blue',
                   borderRadius: 10,
                 }}>
                 <Text style={{textAlign: 'center', color: 'white'}}>Hủy</Text>
@@ -272,7 +337,7 @@ const SpenDingScreen = () => {
                   alignItems: 'center',
                   width: 50,
                   height: 30,
-                  backgroundColor: 'green',
+                  backgroundColor: 'blue',
                   borderRadius: 10,
                 }}>
                 <Text style={{textAlign: 'center', color: 'white'}}>
@@ -319,18 +384,40 @@ const SpenDingScreen = () => {
               onChangeText={setTitle}
               style={{borderWidth: 1, borderColor: 'black', margin: 10}}
             />
-            <TextInput
-              placeholder="Nhập ngày thu"
-              value={ngaythu}
-              onChangeText={setNgaythu}
-              style={{borderWidth: 1, borderColor: 'black', margin: 10}}
-            />
-            <TextInput
-              placeholder="Nhập ngày chi"
-              value={ngaychi}
-              onChangeText={setNgaychi}
-              style={{borderWidth: 1, borderColor: 'black', margin: 10}}
-            />
+            <View
+              style={{flexDirection: 'row', alignItems: 'center', margin: 10}}>
+              <TextInput
+                style={{flex: 1, borderWidth: 1, borderColor: 'black'}}
+                placeholder="Ngày thu"
+                value={ngaythu}
+                editable={false}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  setCurrentDateType('ngaythu');
+                  setIsDatePickerVisible(true);
+                }}
+                style={{padding: 10}}>
+                <Icon name="calendar-month" size={25} color="black" />
+              </TouchableOpacity>
+            </View>
+            <View
+              style={{flexDirection: 'row', alignItems: 'center', margin: 10}}>
+              <TextInput
+                style={{flex: 1, borderWidth: 1, borderColor: 'black'}}
+                placeholder="Ngày chi"
+                value={ngaychi}
+                editable={false}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  setCurrentDateType('ngaychi');
+                  setIsDatePickerVisible(true);
+                }}
+                style={{padding: 10}}>
+                <Icon name="calendar-month" size={25} color="black" />
+              </TouchableOpacity>
+            </View>
             <TextInput
               placeholder="Nhập số tiền"
               value={sotien}
@@ -350,7 +437,7 @@ const SpenDingScreen = () => {
                 style={{
                   margin: 10,
                   padding: 10,
-                  backgroundColor: loaithuchi ? 'green' : 'grey',
+                  backgroundColor: loaithuchi ? 'blue' : 'grey',
                   borderRadius: 10,
                 }}>
                 <Text style={{color: 'white'}}>Thu</Text>
@@ -360,7 +447,7 @@ const SpenDingScreen = () => {
                 style={{
                   margin: 10,
                   padding: 10,
-                  backgroundColor: !loaithuchi ? 'red' : 'grey',
+                  backgroundColor: !loaithuchi ? 'blue' : 'grey',
                   borderRadius: 10,
                 }}>
                 <Text style={{color: 'white'}}>Chi</Text>
@@ -388,7 +475,7 @@ const SpenDingScreen = () => {
                   alignItems: 'center',
                   width: 50,
                   height: 30,
-                  backgroundColor: 'green',
+                  backgroundColor: 'blue',
                   borderRadius: 10,
                 }}>
                 <Text style={{textAlign: 'center', color: 'white'}}>Sửa</Text>
@@ -397,8 +484,26 @@ const SpenDingScreen = () => {
           </View>
         </View>
       </Modal>
+      <DateTimePickerModal
+        isVisible={isDatePickerVisible}
+        mode="date"
+        onConfirm={handleDateConfirm}
+        onCancel={() => setIsDatePickerVisible(false)}
+      />
     </View>
   );
 };
-
+const styles = StyleSheet.create({
+  addButton: {
+    width: 50,
+    height: 50,
+    position: 'absolute',
+    backgroundColor: 'red',
+    bottom: 10,
+    right: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 100,
+  },
+});
 export default SpenDingScreen;
